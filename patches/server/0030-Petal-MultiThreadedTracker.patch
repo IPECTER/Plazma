@@ -207,7 +207,7 @@ index ad779ded0ead62b456c1b96109eba221f92153b3..245cca97718eaa70988b9e05a8bf9d42
      @Override
      public LevelEntityGetter<Entity> getEntities() {
 -        org.spigotmc.AsyncCatcher.catchOp("Chunk getEntities call"); // Spigot
-+        // org.spigotmc.AsyncCatcher.catchOp("Chunk getEntities call"); // Spigot // Plazma - MultiThreadedTracker: async
++        //org.spigotmc.AsyncCatcher.catchOp("Chunk getEntities call"); // Spigot // Plazma - MultiThreadedTracker: async
          return this.entityLookup; // Paper - rewrite chunk system
      }
  
