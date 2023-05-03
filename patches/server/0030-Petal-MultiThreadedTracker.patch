@@ -33,10 +33,10 @@ index f597d65d56964297eeeed6c7e77703764178fee0..1130cd688e179c62aa4d38a1d856164f
          if (len == 0) {
              return new ArrayList<>();
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 57fdef8b16e1ed9a4693356144b4685bbcea285c..948e63f471557c6d59426d8272215fa8de03680b 100644
+index 57fdef8b16e1ed9a4693356144b4685bbcea285c..20018237495f3fca63d31a45b5f76bf36ed02149 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1251,8 +1251,36 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1251,29 +1251,41 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          entity.tracker = null; // Paper - We're no longer tracked
      }
  
@@ -52,28 +52,47 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..948e63f471557c6d59426d8272215fa8
 +            runnable.run();
 +        }
 +    }
-+    // Plazma end
 +
      // Paper start - optimised tracker
      private final void processTrackQueue() {
-+        // Plazma start - MultiThreadedTracker
-+        if (this.level.plazmaLevelConfiguration().entity.multiThreadedTracker.enabled) {
-+            if (this.multithreadedTracker == null) {
-+                this.multithreadedTracker = new org.plazmamc.plazma.tracker.MultithreadedTracker(this.level.chunkSource.entityTickingChunks, this.trackerMainThreadTasks);
-+            }
-+                    this.tracking = true;
+-        //this.level.timings.tracker1.startTiming(); // Purpur
+-        try {
+-            for (TrackedEntity tracker : this.entityMap.values()) {
+-                // update tracker entry
+-                tracker.updatePlayers(tracker.entity.getPlayersInTrackRange());
++        boolean multiThreadedTrackerEnabled = this.level.plazmaLevelConfiguration().entity.multiThreadedTracker.enabled;
++        if (multiThreadedTrackerEnabled) {
++            if (this.multithreadedTracker == null) this.multithreadedTracker = new org.plazmamc.plazma.tracker.MultithreadedTracker(this.level.chunkSource.entityTickingChunks, this.trackerMainThreadTasks);
++            this.tracking = true;
 +            try {
 +                this.multithreadedTracker.tick();
 +            } finally {
 +                this.tracking = false;
-+            }
-+            return;
-+        }
-+        // Plazma end
-         //this.level.timings.tracker1.startTiming(); // Purpur
-         try {
-             for (TrackedEntity tracker : this.entityMap.values()) {
-@@ -1510,10 +1538,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             }
+-        } finally {
+-            //this.level.timings.tracker1.stopTiming(); // Purpur
+         }
+-
+-
+-        //this.level.timings.tracker2.startTiming(); // Purpur
+-        try {
+-            for (TrackedEntity tracker : this.entityMap.values()) {
++        for (TrackedEntity tracker : this.entityMap.values()) {
++            Class<?> superClass = tracker.getClass().getSuperclass();
++            if (!multiThreadedTrackerEnabled || superClass.equals(TrackedEntity.class)) { // check custom tracker
++                tracker.updatePlayers(tracker.entity.getPlayersInTrackRange());
+                 tracker.serverEntity.sendChanges();
+             }
+-        } finally {
+-            //this.level.timings.tracker2.stopTiming(); // Purpur
+         }
+     }
+     // Paper end - optimised tracker
++    // Plazma end
+ 
+     protected void tick() {
+         // Paper start - optimized tracker
+@@ -1510,10 +1522,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      public class TrackedEntity {
  
          public final ServerEntity serverEntity;
@@ -86,7 +105,7 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..948e63f471557c6d59426d8272215fa8
  
          public TrackedEntity(Entity entity, int i, int j, boolean flag) {
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, j, flag, this::broadcast, this.seenBy); // CraftBukkit
-@@ -1525,7 +1553,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1525,7 +1537,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          // Paper start - use distance map to optimise tracker
          com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> lastTrackerCandidates;
  
@@ -95,7 +114,7 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..948e63f471557c6d59426d8272215fa8
              com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> oldTrackerCandidates = this.lastTrackerCandidates;
              this.lastTrackerCandidates = newTrackerCandidates;
  
-@@ -1597,7 +1625,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1597,7 +1609,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
          public void removePlayer(ServerPlayer player) {
@@ -104,7 +123,7 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..948e63f471557c6d59426d8272215fa8
              if (this.seenBy.remove(player.connection)) {
                  this.serverEntity.removePairing(player);
              }
-@@ -1605,7 +1633,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1605,7 +1617,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
          public void updatePlayer(ServerPlayer player) {
@@ -198,10 +217,10 @@ index e6c22ab535ab8fecaadbf06d4982440fd5863f17..973e37ea669be6dccdf2949402a2a0c0
  }
 diff --git a/src/main/java/org/plazmamc/plazma/tracker/MultithreadedTracker.java b/src/main/java/org/plazmamc/plazma/tracker/MultithreadedTracker.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f619071c156cdce9c5918e23a6459cc4dab9bf95
+index 0000000000000000000000000000000000000000..47b8a4590ca3c0abe95f6b721cf0660876238cf0
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/tracker/MultithreadedTracker.java
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,147 @@
 +package org.plazmamc.plazma.tracker;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -332,7 +351,8 @@ index 0000000000000000000000000000000000000000..f619071c156cdce9c5918e23a6459cc4
 +        for (Entity entity : entitySlices.getAllEntities()) {
 +            if (entity != null) {
 +                ChunkMap.TrackedEntity entityTracker = chunkMap.entityMap.get(entity.getId());
-+                if (entityTracker != null) {
++                Class<?> superClass = entityTracker.getClass().getSuperclass();
++                if (!superClass.equals(ChunkMap.TrackedEntity.class)) { // check custom tracker
 +                    if (trackerStage == TrackerStage.SEND_CHANGES) {
 +                        entityTracker.serverEntity.sendChanges();
 +                    } else if (trackerStage == TrackerStage.UPDATE_PLAYERS) {
