@@ -33,7 +33,7 @@ index f597d65d56964297eeeed6c7e77703764178fee0..1130cd688e179c62aa4d38a1d856164f
          if (len == 0) {
              return new ArrayList<>();
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 57fdef8b16e1ed9a4693356144b4685bbcea285c..257a632e43809cf81f9a12d78bc6dbf9ea0dfd56 100644
+index 57fdef8b16e1ed9a4693356144b4685bbcea285c..b7028c19944cc64d1e20f7b539dd284addb0f3e1 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -1251,29 +1251,41 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -114,6 +114,29 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..257a632e43809cf81f9a12d78bc6dbf9
              com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> oldTrackerCandidates = this.lastTrackerCandidates;
              this.lastTrackerCandidates = newTrackerCandidates;
  
+@@ -1567,14 +1579,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         }
+ 
+         public void broadcast(Packet<?> packet) {
+-            Iterator iterator = this.seenBy.iterator();
+-
+-            while (iterator.hasNext()) {
+-                ServerPlayerConnection serverplayerconnection = (ServerPlayerConnection) iterator.next();
+-
+-                serverplayerconnection.send(packet);
+-            }
+-
++            // Plazma start - MultiThreadedTracker: sync
++            ((ServerLevel) this.entity.level).chunkSource.chunkMap.runOnTrackerMainThread(() -> {
++                Iterator iterator = this.seenBy.iterator();
++                while (iterator.hasNext()) {
++                    ServerPlayerConnection serverplayerconnection = (ServerPlayerConnection) iterator.next();
++                    serverplayerconnection.send(packet);
++                }});
++            // Plazma end
+         }
+ 
+         public void broadcastAndSend(Packet<?> packet) {
 @@ -1597,7 +1609,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
@@ -146,7 +169,7 @@ index ca42c2642a729b90d22b968af7258f3aee72e14b..40261b80d947a6be43465013fae55321
      public boolean visible = true;
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index dbb987d5896e199aeae3bcd86c69bf3327af8ada..7c18a99d5230598c796fa93be3248ff0859aa638 100644
+index dbb987d5896e199aeae3bcd86c69bf3327af8ada..b6a06e25405846065dee13dd87ca66e834eed899 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
 @@ -299,7 +299,7 @@ public class ServerEntity {
@@ -187,9 +210,9 @@ index dbb987d5896e199aeae3bcd86c69bf3327af8ada..7c18a99d5230598c796fa93be3248ff0
 -                // CraftBukkit end
 -                this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
 -            }
-+                final var copy = Lists.newArrayList(set);
- 
 +                ((ServerLevel) this.entity.level).chunkSource.chunkMap.runOnTrackerMainThread(() -> {
++                    final var copy = Lists.newArrayList(set);
+ 
 +                    if (this.entity instanceof ServerPlayer) ((ServerPlayer) this.entity).getBukkitEntity().injectScaledMaxHealth(copy, false); // CraftBukkit - Send scaled max health
 +                    this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), copy));
 +                });
@@ -199,7 +222,7 @@ index dbb987d5896e199aeae3bcd86c69bf3327af8ada..7c18a99d5230598c796fa93be3248ff0
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index ad779ded0ead62b456c1b96109eba221f92153b3..245cca97718eaa70988b9e05a8bf9d42feadabfe 100644
+index ad779ded0ead62b456c1b96109eba221f92153b3..bb9b569c4c417c04a9ab8e7623b60e08088b280c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2501,7 +2501,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
