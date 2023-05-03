@@ -217,10 +217,10 @@ index e6c22ab535ab8fecaadbf06d4982440fd5863f17..973e37ea669be6dccdf2949402a2a0c0
  }
 diff --git a/src/main/java/org/plazmamc/plazma/tracker/MultithreadedTracker.java b/src/main/java/org/plazmamc/plazma/tracker/MultithreadedTracker.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..47b8a4590ca3c0abe95f6b721cf0660876238cf0
+index 0000000000000000000000000000000000000000..8123cbba4630ff23dc80301b9167fb21afca3e0f
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/tracker/MultithreadedTracker.java
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,148 @@
 +package org.plazmamc.plazma.tracker;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -351,6 +351,7 @@ index 0000000000000000000000000000000000000000..47b8a4590ca3c0abe95f6b721cf06608
 +        for (Entity entity : entitySlices.getAllEntities()) {
 +            if (entity != null) {
 +                ChunkMap.TrackedEntity entityTracker = chunkMap.entityMap.get(entity.getId());
++                if (entityTracker == null) continue;
 +                Class<?> superClass = entityTracker.getClass().getSuperclass();
 +                if (!superClass.equals(ChunkMap.TrackedEntity.class)) { // check custom tracker
 +                    if (trackerStage == TrackerStage.SEND_CHANGES) {
