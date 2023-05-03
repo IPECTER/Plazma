@@ -33,7 +33,7 @@ index f597d65d56964297eeeed6c7e77703764178fee0..1130cd688e179c62aa4d38a1d856164f
          if (len == 0) {
              return new ArrayList<>();
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 57fdef8b16e1ed9a4693356144b4685bbcea285c..20018237495f3fca63d31a45b5f76bf36ed02149 100644
+index 57fdef8b16e1ed9a4693356144b4685bbcea285c..257a632e43809cf81f9a12d78bc6dbf9ea0dfd56 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -1251,29 +1251,41 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -101,7 +101,7 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..20018237495f3fca63d31a45b5f76bf3
          private final int range;
          SectionPos lastSectionPos;
 -        public final Set<ServerPlayerConnection> seenBy = new ReferenceOpenHashSet<>(); // Paper - optimise map impl
-+        public final Set<ServerPlayerConnection> seenBy = it.unimi.dsi.fastutil.objects.ReferenceSets.synchronize(new ReferenceOpenHashSet<>()); // Paper - optimise map impl // Plazma start - MultiThreadedTracker: sync
++        public final Set<ServerPlayerConnection> seenBy = it.unimi.dsi.fastutil.objects.ReferenceSets.synchronize(new ReferenceOpenHashSet<>()); // Paper - optimise map impl // Plazma - MultiThreadedTracker: sync
  
          public TrackedEntity(Entity entity, int i, int j, boolean flag) {
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, j, flag, this::broadcast, this.seenBy); // CraftBukkit
@@ -119,7 +119,7 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..20018237495f3fca63d31a45b5f76bf3
  
          public void removePlayer(ServerPlayer player) {
 -            org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot
-+            //org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot // Plazma start - MultiThreadedTracker: async
++            //org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot // Plazma - MultiThreadedTracker: async
              if (this.seenBy.remove(player.connection)) {
                  this.serverEntity.removePairing(player);
              }
@@ -128,7 +128,7 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..20018237495f3fca63d31a45b5f76bf3
  
          public void updatePlayer(ServerPlayer player) {
 -            org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
-+            //org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot // Plazma start - MultiThreadedTracker: async
++            //org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot // Plazma - MultiThreadedTracker: async
              if (player != this.entity) {
                  // Paper start - remove allocation of Vec3D here
                  // Vec3 vec3d = player.position().subtract(this.entity.position());
@@ -197,6 +197,19 @@ index dbb987d5896e199aeae3bcd86c69bf3327af8ada..7c18a99d5230598c796fa93be3248ff0
 +            // Plazma end
              set.clear();
          }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index ad779ded0ead62b456c1b96109eba221f92153b3..245cca97718eaa70988b9e05a8bf9d42feadabfe 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2501,7 +2501,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+     @Override
+     public LevelEntityGetter<Entity> getEntities() {
+-        org.spigotmc.AsyncCatcher.catchOp("Chunk getEntities call"); // Spigot
++        // org.spigotmc.AsyncCatcher.catchOp("Chunk getEntities call"); // Spigot // Plazma - MultiThreadedTracker: async
+         return this.entityLookup; // Paper - rewrite chunk system
+     }
  
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
 index e6c22ab535ab8fecaadbf06d4982440fd5863f17..973e37ea669be6dccdf2949402a2a0c0e1bd746c 100644
