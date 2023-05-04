@@ -17,7 +17,7 @@ index b2ee73a2ef6042694ca84c27d592e5fb13b4a0fe..d6e20ebb1e07da767f6571bbaf0dc882
      public void playerTouch(Player player) {}
  
      public void push(Entity entity) {
-+        if (entity.noPhysics && this.noPhysics) return; // Plazma
++        if (entity.noPhysics || this.noPhysics) return; // Plazma
          if (!this.isPassengerOfSameVehicle(entity)) {
 -            if (!entity.noPhysics && !this.noPhysics) {
 +            //if (!entity.noPhysics && !this.noPhysics) { // Plazma
