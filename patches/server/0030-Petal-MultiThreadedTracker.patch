@@ -33,7 +33,7 @@ index f597d65d56964297eeeed6c7e77703764178fee0..1130cd688e179c62aa4d38a1d856164f
          if (len == 0) {
              return new ArrayList<>();
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 57fdef8b16e1ed9a4693356144b4685bbcea285c..b7028c19944cc64d1e20f7b539dd284addb0f3e1 100644
+index 57fdef8b16e1ed9a4693356144b4685bbcea285c..64602911d82ddde63a8bfda4bdfe8deed7bf7bbf 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -1251,29 +1251,41 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -127,12 +127,12 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..b7028c19944cc64d1e20f7b539dd284a
 -            }
 -
 +            // Plazma start - MultiThreadedTracker: sync
++            final List<ServerPlayerConnection> copy = com.google.common.collect.ImmutableList.copyOf(this.seenBy);
 +            ((ServerLevel) this.entity.level).chunkSource.chunkMap.runOnTrackerMainThread(() -> {
-+                Iterator iterator = this.seenBy.iterator();
-+                while (iterator.hasNext()) {
-+                    ServerPlayerConnection serverplayerconnection = (ServerPlayerConnection) iterator.next();
-+                    serverplayerconnection.send(packet);
-+                }});
++                for (ServerPlayerConnection connection : copy) {
++                    connection.send(packet);
++                }
++            });
 +            // Plazma end
          }
  
@@ -169,19 +169,20 @@ index ca42c2642a729b90d22b968af7258f3aee72e14b..40261b80d947a6be43465013fae55321
      public boolean visible = true;
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index dbb987d5896e199aeae3bcd86c69bf3327af8ada..b6a06e25405846065dee13dd87ca66e834eed899 100644
+index dbb987d5896e199aeae3bcd86c69bf3327af8ada..43a399069b530224f4fc50dd008af343c051be2e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -299,7 +299,7 @@ public class ServerEntity {
+@@ -299,15 +299,15 @@ public class ServerEntity {
  
      public void removePairing(ServerPlayer player) {
          this.entity.stopSeenByPlayer(player);
 -        player.connection.send(new ClientboundRemoveEntitiesPacket(new int[]{this.entity.getId()}));
-+        ((ServerLevel) this.entity.level).chunkSource.chunkMap.runOnTrackerMainThread(() -> player.connection.send(new ClientboundRemoveEntitiesPacket(new int[]{this.entity.getId()}))); // Plazma - MultiThreadedTracker: sync
++        ((ServerLevel) this.entity.level).chunkSource.chunkMap.runOnTrackerMainThread(() -> player.connection.send(new ClientboundRemoveEntitiesPacket(this.entity.getId()))); // Plazma - MultiThreadedTracker: sync
      }
  
      public void addPairing(ServerPlayer player) {
-@@ -307,7 +307,7 @@ public class ServerEntity {
+-        List<Packet<ClientGamePacketListener>> list = new ArrayList();
++        List<Packet<ClientGamePacketListener>> list = new ArrayList<>();
  
          Objects.requireNonNull(list);
          this.sendPairingData(list::add, player); // CraftBukkit - add player
@@ -190,6 +191,15 @@ index dbb987d5896e199aeae3bcd86c69bf3327af8ada..b6a06e25405846065dee13dd87ca66e8
          this.entity.startSeenByPlayer(player);
      }
  
+@@ -372,7 +372,7 @@ public class ServerEntity {
+             if (!list.isEmpty()) {
+                 consumer.accept(new ClientboundSetEquipmentPacket(this.entity.getId(), list));
+             }
+-            ((LivingEntity) this.entity).detectEquipmentUpdates(); // CraftBukkit - SPIGOT-3789: sync again immediately after sending
++            ((ServerLevel) this.entity.level).chunkSource.chunkMap.runOnTrackerMainThread(() -> ((LivingEntity) this.entity).detectEquipmentUpdates()); // CraftBukkit - SPIGOT-3789: sync again immediately after sending // Plazma - MultiThreadedTracker: sync
+         }
+ 
+         // CraftBukkit start - Fix for nonsensical head yaw
 @@ -415,21 +415,21 @@ public class ServerEntity {
  
          if (list != null) {
@@ -210,9 +220,9 @@ index dbb987d5896e199aeae3bcd86c69bf3327af8ada..b6a06e25405846065dee13dd87ca66e8
 -                // CraftBukkit end
 -                this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
 -            }
-+                ((ServerLevel) this.entity.level).chunkSource.chunkMap.runOnTrackerMainThread(() -> {
-+                    final var copy = Lists.newArrayList(set);
++                final List<AttributeInstance> copy = com.google.common.collect.ImmutableList.copyOf(set);
  
++                ((ServerLevel) this.entity.level).chunkSource.chunkMap.runOnTrackerMainThread(() -> {
 +                    if (this.entity instanceof ServerPlayer) ((ServerPlayer) this.entity).getBukkitEntity().injectScaledMaxHealth(copy, false); // CraftBukkit - Send scaled max health
 +                    this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), copy));
 +                });
