@@ -169,7 +169,7 @@ index ca42c2642a729b90d22b968af7258f3aee72e14b..40261b80d947a6be43465013fae55321
      public boolean visible = true;
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index dbb987d5896e199aeae3bcd86c69bf3327af8ada..43a399069b530224f4fc50dd008af343c051be2e 100644
+index dbb987d5896e199aeae3bcd86c69bf3327af8ada..1d233391aa5d81ceda8e910b1b7194ecc8a17e3b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
 @@ -299,15 +299,15 @@ public class ServerEntity {
@@ -220,7 +220,7 @@ index dbb987d5896e199aeae3bcd86c69bf3327af8ada..43a399069b530224f4fc50dd008af343
 -                // CraftBukkit end
 -                this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
 -            }
-+                final List<AttributeInstance> copy = com.google.common.collect.ImmutableList.copyOf(set);
++                final Set<AttributeInstance> copy = java.util.Collections.synchronizedSet(set);
  
 +                ((ServerLevel) this.entity.level).chunkSource.chunkMap.runOnTrackerMainThread(() -> {
 +                    if (this.entity instanceof ServerPlayer) ((ServerPlayer) this.entity).getBukkitEntity().injectScaledMaxHealth(copy, false); // CraftBukkit - Send scaled max health
