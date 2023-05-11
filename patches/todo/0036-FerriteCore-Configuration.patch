@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Wed, 10 May 2023 13:32:42 +0900
+Subject: [PATCH] FerriteCore Configuration
+
+
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 754ed13a04631c69e3fb2421a12b17d0a6f732c6..b855ce627a93f8566543b5f62d11b5369e1689e6 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -70,4 +70,11 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public int timerTimeOut = 0;
+ 
+     }
++
++    public FerriteCore ferriteCore;
++    public class FerriteCore extends ConfigurationPart {
++
++        public boolean enabled = DO_OPTIMIZE;
++
++    }
+ }

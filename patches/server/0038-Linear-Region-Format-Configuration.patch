@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Thu, 11 May 2023 11:48:43 +0900
+Subject: [PATCH] Linear Region Format Configuration
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index dc89b3a8956af69fa71a2bfa17c22aee6c5e9edf..4e22ad4ecbde0d6fe0628f9aef3a9696b60b9504 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -58,6 +58,10 @@ dependencies {
+     testImplementation("org.hamcrest:hamcrest-library:1.3")
+ 
+     implementation("io.netty:netty-all:4.1.87.Final"); // Paper - Bump netty
++    // Plazma start - Linear
++    implementation("com.github.luben:zstd-jni:1.5.5-2")
++    implementation("org.lz4:lz4-java:1.8.0")
++    // Plazma end
+ }
+ 
+ val craftbukkitPackageVersion = "1_19_R3" // Paper
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index 29428cd1b35bfbd7e835747b0215d4fffdce10ba..c85f59467120505f6cab5bf98744473978a2cef4 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -131,4 +131,15 @@ public class LevelConfigurations extends ConfigurationPart {
+         }
+ 
+     }
++
++    public RegionFormat regionFormat;
++    public class RegionFormat extends ConfigurationPart {
++
++        String format = "ANVIL";
++
++        public org.plazmamc.plazma.region.RegionFileFormat format() {
++            return org.plazmamc.plazma.region.RegionFileFormat.getFormat(format);
++        }
++
++    }
+ }
+diff --git a/src/main/java/org/plazmamc/plazma/region/RegionFileFormat.java b/src/main/java/org/plazmamc/plazma/region/RegionFileFormat.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..68ffc32d1b218e1dbfb46a83ddef0a4f7e68c59f
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/region/RegionFileFormat.java
+@@ -0,0 +1,12 @@
++package org.plazmamc.plazma.region;
++
++import java.util.List;
++
++public enum RegionFileFormat {
++    ANVIL,
++    LINEAR;
++
++    public static RegionFileFormat getFormat(String name) {
++        return List.of("ANVIL", "LINEAR").contains(name.toUpperCase()) ? valueOf(RegionFileFormat.class, name.toUpperCase()) : ANVIL;
++    }
++}
