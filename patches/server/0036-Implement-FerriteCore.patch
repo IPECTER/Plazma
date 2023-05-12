@@ -5,7 +5,7 @@ Subject: [PATCH] Implement FerriteCore
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index bee42ce7c1cb0f5ebd4890c02bc9c5dd727f7fd6..0529dffee64b02ddf89cf77cbf5ac0c6eeb8e8b8 100644
+index bee42ce7c1cb0f5ebd4890c02bc9c5dd727f7fd6..478802cedeef5166bf5662187038d1439be6c242 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -737,9 +737,16 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -21,7 +21,7 @@ index bee42ce7c1cb0f5ebd4890c02bc9c5dd727f7fd6..0529dffee64b02ddf89cf77cbf5ac0c6
  
          protected BlockStateBase(Block block, ImmutableMap<Property<?>, Comparable<?>> propertyMap, MapCodec<BlockState> codec) {
              super(block, propertyMap, codec);
-+            if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().ferriteCore.blockStateCache()) LAST_CACHE.set(asState().cache); // Plazma - FerriteCore
++            LAST_CACHE.set(asState().cache); // Plazma - FerriteCore
              this.fluidState = Fluids.EMPTY.defaultFluidState();
              BlockBehaviour.Properties blockbase_info = block.properties;
  
@@ -30,7 +30,7 @@ index bee42ce7c1cb0f5ebd4890c02bc9c5dd727f7fd6..0529dffee64b02ddf89cf77cbf5ac0c6
              this.spawnParticlesOnBreak = blockbase_info.spawnParticlesOnBreak;
              this.conditionallyFullOpaque = this.isOpaque() & this.isTransparentOnSomeFaces(); // Paper
 +            // Plazma start - FerriteCore
-+            if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().ferriteCore.blockStateCache() && asState().cache != null) {
++            if (asState().cache != null) {
 +                Cache newCache = asState().cache;
 +                final Cache oldCache = LAST_CACHE.get();
 +                VoxelShape dedupedCollisionShape;
@@ -147,18 +147,18 @@ index 2182afd1b95acf14c55bddfeec17dae0a63e1f00..5fc28a6a09b251ce7adbb93e30045869
      // Paper start
      public boolean intersects(AABB shape) {
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index b855ce627a93f8566543b5f62d11b5369e1689e6..b9580d72399011c3dfeeea4518e7d16c9329ca31 100644
+index 754ed13a04631c69e3fb2421a12b17d0a6f732c6..b4eaf385eb6ffbe0131b00aa5d8357c614f1130b 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -75,6 +75,11 @@ public class GlobalConfiguration extends ConfigurationPart {
-     public class FerriteCore extends ConfigurationPart {
- 
-         public boolean enabled = DO_OPTIMIZE;
-+        boolean blockStateCache = true;
-+
-+        public boolean blockStateCache() {
-+            return enabled && blockStateCache;
-+        }
+@@ -70,4 +70,11 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public int timerTimeOut = 0;
  
      }
++
++    public RegionFormat regionFormat;
++    public class RegionFormat extends ConfigurationPart {
++
++        public boolean debug = false;
++
++    }
  }

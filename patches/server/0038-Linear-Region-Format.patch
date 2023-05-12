@@ -328,7 +328,7 @@ index dcfe090c269d4cbcc2eb1b6f85392848bb34656c..f035b5302aa2bb998fb6f750da99bd33
          try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new InflaterInputStream(Files.newInputStream(file))))) {
              return NbtIo.read((java.io.DataInput) out);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef1affe290 100644
+index d72f61f545c3929825e628607b85e0d25f79db1f..a9477c8baf16ea52a75be660c769646f26e2d1e8 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -22,27 +22,29 @@ public class RegionFileStorage implements AutoCloseable {
@@ -368,7 +368,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
              return null;
          }
  
-@@ -62,49 +64,64 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -62,49 +64,57 @@ public class RegionFileStorage implements AutoCloseable {
          }
      }
  
@@ -420,19 +420,12 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
 +            // Plazma start - Linear Region Format
 +            Path path1; // Paper - diff on change
 +            if (existingOnly) {
-+
 +                Path anvil = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
 +                Path linear = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".linear");
 +                if (java.nio.file.Files.exists(anvil)) path1 = anvil;
 +                else if (java.nio.file.Files.exists(linear)) path1 = linear;
-+                else {
-+                    this.markNonExisting();
-+                    return null;
-+                }
-+            } else {
-+                path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + "." + (this.format.equals("LINEAR") ? "linear" : "mca"));
-+                this.createRegionFile(regionPos);
-+            }
++                else return null;
++            } else path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + "." + (this.format.equals("LINEAR") ? "linear" : "mca"));
 +            if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().regionFormat.debug) net.minecraft.server.MinecraftServer.LOGGER.info("Opening file {} with format {} (existingOnly = {})", path1, this.format, existingOnly);
 +            org.plazmamc.plazma.region.AbstractRegionFile regionfile1 = org.plazmamc.plazma.region.AbstractRegionFileFactory.getAbstractRegionFile(linearCompressionLevel, path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
 +            // Plazma end
@@ -445,7 +438,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
              }
              // Paper end
              return regionfile1;
-@@ -132,7 +149,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -132,7 +142,7 @@ public class RegionFileStorage implements AutoCloseable {
      }
  
  
@@ -454,7 +447,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
          synchronized (regionfile) {
              try (DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkCoordinate)) {
                  CompoundTag oversizedData = regionfile.getOversizedData(chunkCoordinate.x, chunkCoordinate.z);
-@@ -179,14 +196,14 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -179,14 +189,14 @@ public class RegionFileStorage implements AutoCloseable {
      @Nullable
      public CompoundTag read(ChunkPos pos) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
@@ -471,7 +464,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
          // We add the regionfile parameter to avoid the potential deadlock (on fileLock) if we went back to obtain a regionfile
          // if we decide to re-read
          // Paper end
-@@ -196,7 +213,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -196,7 +206,7 @@ public class RegionFileStorage implements AutoCloseable {
  
          // Paper start
          if (regionfile.isOversized(pos.x, pos.z)) {
@@ -480,7 +473,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
              return readOversizedChunk(regionfile, pos);
          }
          // Paper end
-@@ -210,12 +227,12 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -210,12 +220,12 @@ public class RegionFileStorage implements AutoCloseable {
                      if (this.isChunkData) {
                          ChunkPos chunkPos = ChunkSerializer.getChunkCoordinate(nbttagcompound);
                          if (!chunkPos.equals(pos)) {
@@ -496,7 +489,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
                              return null;
                          }
                      }
-@@ -249,13 +266,13 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -249,13 +259,13 @@ public class RegionFileStorage implements AutoCloseable {
  
          return nbttagcompound;
          } finally { // Paper start
@@ -512,7 +505,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
          if (regionfile == null) {
              return;
          }
-@@ -285,7 +302,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -285,7 +295,7 @@ public class RegionFileStorage implements AutoCloseable {
      }
  
      protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
@@ -521,7 +514,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
          if (nbt == null && regionfile == null) {
              return;
          }
-@@ -335,7 +352,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -335,7 +345,7 @@ public class RegionFileStorage implements AutoCloseable {
          }
          // Paper end
          } finally { // Paper start
@@ -530,7 +523,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
          } // Paper end
      }
  
-@@ -344,7 +361,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -344,7 +354,7 @@ public class RegionFileStorage implements AutoCloseable {
          ObjectIterator objectiterator = this.regionCache.values().iterator();
  
          while (objectiterator.hasNext()) {
@@ -539,7 +532,7 @@ index d72f61f545c3929825e628607b85e0d25f79db1f..cd5a58f4e89df163cd3144f1c1c671ef
  
              try {
                  regionfile.close();
-@@ -360,7 +377,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -360,7 +370,7 @@ public class RegionFileStorage implements AutoCloseable {
          ObjectIterator objectiterator = this.regionCache.values().iterator();
  
          while (objectiterator.hasNext()) {
@@ -576,32 +569,15 @@ index 27474beb980afcb92cace1e1c37e7a2aa5060daf..820f24b39ef16bf410f114116394be15
              try {
                  file = world.getChunkSource().chunkMap.regionFileCache.getRegionFile(chunkPos, false);
              } catch (java.io.IOException ex) {
-diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index b9580d72399011c3dfeeea4518e7d16c9329ca31..7655531e0826d90f13fbada77e1f71b34d525e7f 100644
---- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-+++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -82,4 +82,11 @@ public class GlobalConfiguration extends ConfigurationPart {
-         }
- 
-     }
-+
-+    public LevelConfigurations.RegionFormat regionFormat;
-+    public class RegionFormat extends ConfigurationPart {
-+
-+        public boolean debug = false;
-+
-+    }
- }
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
-index c85f59467120505f6cab5bf98744473978a2cef4..9297de33bb9b457cc3fd92ae857d950bdde1db15 100644
+index c85f59467120505f6cab5bf98744473978a2cef4..6723e038f01cc47bb6bd81d1431999ebae6c2595 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
-@@ -136,6 +136,8 @@ public class LevelConfigurations extends ConfigurationPart {
+@@ -136,6 +136,7 @@ public class LevelConfigurations extends ConfigurationPart {
      public class RegionFormat extends ConfigurationPart {
  
          String format = "ANVIL";
 +        public int linearCompressionLevel = 1;
-+        public boolean debug = false;
  
          public org.plazmamc.plazma.region.RegionFileFormat format() {
              return org.plazmamc.plazma.region.RegionFileFormat.getFormat(format);
